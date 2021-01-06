@@ -1821,6 +1821,19 @@ std::tuple<Tensor, Tensor, Tensor> prelu_double_backward(
   }
 }
 
+Tensor slice_backward_wrapper(
+    const at::Tensor& grad,
+    const c10::IntArrayRef input_sizes,
+    int64_t dim,
+    c10::optional<int64_t> start,
+    c10::optional<int64_t> end,
+    int64_t step) {
+  auto start_val = start.has_value() ? start.value() : 0;
+  auto end_val = end.has_value() ? end.value() : INT64_MAX;
+
+  return slice_backward(grad, input_sizes, dim, start_val, end_val, step);
+}
+
 // https://j-towns.github.io/papers/svd-derivative.pdf
 //
 // This makes no assumption on the signs of sigma.
@@ -2771,7 +2784,7 @@ Tensor constant_pad_nd_backward(const Tensor& grad, IntArrayRef pad) {
 }
 
 Tensor embedding_dense_double_backward(const Tensor & grad, const Tensor & indices, int64_t padding_idx) {
-  // since first backward takes care of scaling by frequency, 
+  // since first backward takes care of scaling by frequency,
   // we don't need to worry about it here.
   auto gg_weight = grad.index_select(0, indices.reshape(-1));
 
